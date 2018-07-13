@@ -9,6 +9,6 @@ public class QQParam extends BaseParam{
 
     public String showapi_appid = "48527";
     public String showapi_sign = "8a664492b3d94c51b09f0fd36fbc52f5";
-    public String qq = "917361050";
+    public String qq = "91735485456";
 
 }
