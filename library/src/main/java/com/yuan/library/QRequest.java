@@ -4,23 +4,25 @@ import com.yuan.library.base.BaseParam;
 
 import java.io.Serializable;
 
+import io.reactivex.annotations.NonNull;
+
 /**
  * Created by shucheng.qu on 2017/5/26.
  */
 
 public class QRequest {
 
-    public static NetWorkParam startRequest(NetWorkListener netWorkListener, IServiceMap serviceMap, final BaseParam param, RequestFeature... features) {
+    public static NetWorkParam startRequest(NetWorkListener netWorkListener, @NonNull IServiceMap serviceMap, final BaseParam param, RequestFeature... features) {
         return startRequest(netWorkListener, serviceMap, param, null, features);
     }
 
-    public static NetWorkParam startRequest(NetWorkListener netWorkListener, IServiceMap serviceMap, final BaseParam param, Serializable ext, RequestFeature... features) {
+    public static NetWorkParam startRequest(NetWorkListener netWorkListener, @NonNull IServiceMap serviceMap, final BaseParam param, Serializable ext, RequestFeature... features) {
         NetWorkParam netWorkParam = getNetWorkParam(netWorkListener, serviceMap, param, ext, features);
         netWorkParam.startRequest();
         return netWorkParam;
     }
 
-    public static NetWorkParam getNetWorkParam(NetWorkListener netWorkListener, IServiceMap serviceMap, BaseParam baseParam, Serializable ext, RequestFeature... features) {
+    public static NetWorkParam getNetWorkParam(NetWorkListener netWorkListener, @NonNull IServiceMap serviceMap, BaseParam baseParam, Serializable ext, RequestFeature... features) {
         NetWorkParam netWorkParam = new NetWorkParam(serviceMap, baseParam);
         netWorkParam.ext = ext;
         netWorkParam.netWorkListener = netWorkListener;

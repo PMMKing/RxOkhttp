@@ -11,8 +11,6 @@ android {
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
     }
 
     buildTypes {
@@ -23,6 +21,17 @@ android {
     }
 
 }
+
+task makeJar(type: Copy) {
+    delete 'build/libs/mysdk.jar'
+    from('build/intermediates/bundles/release/')
+    into('build/libs/')
+    include('classes.jar')
+    rename ('classes.jar','mysdk.jar')
+}
+
+makeJar.dependsOn(build)
+
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')

@@ -1,6 +1,7 @@
 package com.yuan.library;
 
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.alibaba.fastjson.JSON;
 
@@ -138,8 +139,8 @@ public class NetWorkManage {
                     e.onError(new Throwable("data 为空"));
                 } else {
                     e.onNext(json);
-                    e.onComplete();
                 }
+                e.onComplete();
             }
         }).subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -161,14 +162,7 @@ public class NetWorkManage {
                                 netWorkParam.netWorkListener.onNetCancel(netWorkParam);
                             }
                             return false;
-                        } /*else if (!KeyUtils.checkSign(s)) {
-                            removeCurrentTask(netWorkParam);
-                            if (netWorkParam.netWorkListener != null) {
-                                netWorkParam.result.resultHead.resultDesc = "签名验证失败！";
-                                netWorkParam.netWorkListener.onNetFailed(netWorkParam);
-                            }
-                            return false;
-                        }*/
+                        }
                         return true;
                     }
                 })
@@ -184,10 +178,9 @@ public class NetWorkManage {
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
-                        if (!netWorkParam.intercept(netWorkParam)) {
-                            if (netWorkParam.netWorkListener != null) {
-                                netWorkParam.netWorkListener.onMsgSearchComplete(netWorkParam);
-                                netWorkParam.netWorkListener.onNetFinish(netWorkParam);
+                        if (netWorkParam.netWorkListener != null) {
+                            if (!netWorkParam.netWorkListener.onNetIntercept(netWorkParam)) {
+                                netWorkParam.netWorkListener.onNetSuccess(netWorkParam);
                             }
                         }
                     }
@@ -196,8 +189,7 @@ public class NetWorkManage {
                     public void onError(@NonNull Throwable e) {
                         removeCurrentTask(netWorkParam);
                         if (netWorkParam.netWorkListener != null) {
-                            netWorkParam.netWorkListener.onNetError(netWorkParam);
-                            netWorkParam.netWorkListener.onNetEnd(netWorkParam);
+                            netWorkParam.netWorkListener.onNetFailed(netWorkParam);
                         }
                     }
 
@@ -218,32 +210,26 @@ public class NetWorkManage {
             Request request = null;
             switch (requestType) {
                 case GET:
-                    request = requestGetBySyn(netWorkParam);
+                    request = requestGet(netWorkParam);
                     break;
                 case POSTJSON:
-                    request = requestPostBySynGson(netWorkParam);
+                    request = requestPostGson(netWorkParam);
                     break;
                 case POSTFORM:
-                    request = requestPostBySynForm(netWorkParam);
+                    request = requestPostForm(netWorkParam);
                     break;
                 case POSTFILE:
-                    request = requestPostBySynFile(netWorkParam);
+                    request = requestPostFile(netWorkParam);
                     break;
-                /*case GETPATH:
-                    request = requestGetPathBySyn(netWorkParam);
-                    break;*/
             }
-            if (request == null) {
-                return "";
-            }
-            if (netWorkParam.cancel) {
-                return "";
-            }
+            if (request == null) return "";
+            if (netWorkParam.cancel) return "";
             Call call = OkhttpClient.okClient.newCall(request);
             Response response = call.execute();
             return response.body().string();
         } catch (Exception e) {
             e.printStackTrace();
+            HttpLogUtils.e("rxokhttp", e.toString());
             return "";
         }
     }
@@ -254,7 +240,7 @@ public class NetWorkManage {
      *
      * @param
      */
-    private Request requestGetBySyn(NetWorkParam param) {
+    private Request requestGet(NetWorkParam param) {
         if (param == null || param.param == null || param.param.toHashMap() == null)
             return null;
         HashMap<String, String> paramsMap = param.param.toHashMap();
@@ -270,44 +256,16 @@ public class NetWorkManage {
         }
         String requestUrl = "";
         if (param.param.toHashMap().isEmpty()) {
-            requestUrl = String.format("%s%s", param.key.getHostUrl(), param.key.getDescUrl());
+            requestUrl = String.format("%s%s", param.hostUrl, param.descUrl);
         } else {
-            requestUrl = String.format("%s%s?%s", param.key.getHostUrl(), param.key.getDescUrl(), tempParams.toString());
+            requestUrl = String.format("%s%s?%s", param.hostUrl, param.descUrl, tempParams.toString());
         }
         //补全请求地址
         return new Request.Builder()
                 .url(requestUrl)
-//                .addHeader("codeToken", Store.get("codeToken", ""))
-//                .addHeader("token", Store.get("token", ""))
+                .headers(getHeaders(param))
                 .build();
     }
-
-//    /**
-//     * okHttp get  path同步请求
-//     *
-//     * @param
-//     */
-//    private Request requestGetPathBySyn(NetWorkParam param) {
-//        if (param == null || param.param == null || param.param.toHashMap() == null || param.param.toHashMap().isEmpty())
-//            return null;
-//        HashMap<String, String> paramsMap = param.param.toHashMap();
-//        StringBuilder tempParams = new StringBuilder();
-//        //处理参数
-//        int pos = 0;
-//        for (String key : paramsMap.keySet()) {
-//            if (pos > 0) {
-//                tempParams.append("&");
-//            }
-//            tempParams.append(String.format("%s=%s", key, paramsMap.get(key)));
-//            pos++;
-//        }
-//        //补全请求地址
-//        String requestUrl = String.format("%s%s?%s", param.key.getHostUrl(), param.key.getDescUrl(), tempParams.toString());
-//        String replace = requestUrl.replace("${}", param.param.path);
-//        return new Request.Builder()
-//                .url(replace)
-//                .build();
-//    }
 
     /**
      * post json 提交
@@ -315,7 +273,7 @@ public class NetWorkManage {
      * @param param
      * @return
      */
-    private Request requestPostBySynGson(NetWorkParam param) {
+    private Request requestPostGson(NetWorkParam param) {
         if (param == null || param.param == null) return null;
         String json = JSON.toJSONString(param.param);
 //        param.param.packetHead.sign = KeyUtils.getSign(json);
@@ -323,10 +281,9 @@ public class NetWorkManage {
         MediaType JSON = MediaType.parse("application/json; charset=utf-8");
         RequestBody requestBody = RequestBody.create(JSON, json);
         return new Request.Builder()
-                .url(param.key.getHostUrl() + param.key.getDescUrl())
+                .url(param.hostUrl + param.descUrl)
                 .post(requestBody)
-//                .addHeader("codeToken", Store.get("codeToken", ""))
-//                .addHeader("token", Store.get("token", ""))
+                .headers(getHeaders(param))
                 .build();
     }
 
@@ -336,7 +293,7 @@ public class NetWorkManage {
      * @param
      * @return
      */
-    private Request requestPostBySynForm(NetWorkParam param) {
+    private Request requestPostForm(NetWorkParam param) {
         if (param == null || param.param == null || param.param.toHashMap() == null || param.param.toHashMap().isEmpty())
             return null;
         HashMap<String, String> paramsMap = param.param.toHashMap();
@@ -348,30 +305,40 @@ public class NetWorkManage {
         //生成表单实体对象
         RequestBody formBody = builder.build();
         return new Request.Builder()
-                .url(param.key.getHostUrl() + param.key.getDescUrl())
+                .url(param.hostUrl + param.descUrl)
                 .post(formBody)
+                .headers(getHeaders(param))
                 .build();
     }
 
     /**
-     * post 图片提交
+     * post 文件提交
      *
      * @param param
      * @return
      */
-    private Request requestPostBySynFile(NetWorkParam param) {
+    private Request requestPostFile(NetWorkParam param) {
         if (param == null || TextUtils.isEmpty(param.filePath)) return null;
         File file = new File(param.filePath);
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-                .addFormDataPart("file", file.getName(), RequestBody.create(MediaType.parse("image/png"), file))
-//                .addFormDataPart("file", file.getName(), RequestBody.create(MediaType.parse("application/octet-stream"), file))
+                .addFormDataPart(file.getName(), file.getName(), RequestBody.create(param.mediaType, file))
                 .build();
         return new Request.Builder()
-                .url(param.key.getHostUrl() + param.key.getDescUrl())
+                .url(param.hostUrl + param.descUrl)
                 .post(requestBody)
-//                .addHeader("token", Store.get("token", ""))
+                .headers(getHeaders(param))
                 .build();
+    }
+
+    private Headers getHeaders(NetWorkParam param) {
+        HashMap<String, String> headers = param.key.getHeaders();
+        Headers.Builder builder = new Headers.Builder();
+        if (headers == null || headers.isEmpty()) return builder.build();
+        for (String key : headers.keySet()) {
+            builder.add(key, headers.get(key));
+        }
+        return builder.build();
     }
 
 

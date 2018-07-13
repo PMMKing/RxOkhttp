@@ -8,20 +8,14 @@ public interface NetWorkListener {
 
     void onNetStart(NetWorkParam param);
 
-    void onMsgSearchComplete(NetWorkParam param);
+    void onNetSuccess(NetWorkParam param);
 
     void onNetCancel(NetWorkParam param);
-
-    /**
-     * 数据签名验证失败
-     * @param param
-     */
-    void onNetFinish(NetWorkParam param);
-
-    void onNetError(NetWorkParam param);
 
     void onNetFailed(NetWorkParam param);
 
     void onNetEnd(NetWorkParam param);
+
+    boolean onNetIntercept(NetWorkParam param);
 
 }

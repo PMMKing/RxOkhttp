@@ -6,6 +6,11 @@ import com.yuan.library.base.BaseParam;
 import com.yuan.library.base.BaseResult;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+
+import io.reactivex.annotations.NonNull;
+import okhttp3.MediaType;
 
 /**
  * Created by shucheng.qu on 2017/10/13.
@@ -16,26 +21,29 @@ public class NetWorkParam implements Serializable {
     public IServiceMap key;
     public String hostUrl = "";
     public String descUrl = "";
+    public BaseParam param;
+    public BaseResult result = new BaseResult();
+    public String filePath;
+    public MediaType mediaType = MediaType.parse("image/png");
+    /**
+     * 本地用的参数
+     */
     public boolean block = false;
     public boolean blockauto = false;
     public boolean cancelAble = true;
     public boolean cancel = false;
-    public int addType = QRequest.NET_ADD_CANCELSAMET;
-    public BaseParam param;
-    public BaseResult result = new BaseResult();
-    public String filePath;
-    /**
-     * 本地用的参数
-     */
+    public int addType = QRequest.NET_ADD_ONORDER;
+
     public String progressMessage = "";
     public Serializable ext;
-    public String ke;
     public NetWorkListener netWorkListener;
 
 
-    public NetWorkParam(IServiceMap key, BaseParam param) {
+    NetWorkParam(IServiceMap key, BaseParam param) {
         this.key = key;
         this.param = param != null ? param : new BaseParam();
+        hostUrl = key.getHostUrl();
+        descUrl = key.getDescUrl();
     }
 
     /**

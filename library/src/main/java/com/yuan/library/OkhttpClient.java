@@ -20,7 +20,7 @@ public class OkhttpClient {
 
     public static final OkHttpClient okClient = new OkHttpClient
             .Builder()
-            .addInterceptor(addHeaderInterceptor()) //
+//            .addInterceptor(addHeaderInterceptor()) //
             .addInterceptor(httpLoggingInterceptor()) //日志,所有的请求响应
             .connectTimeout(24L, TimeUnit.SECONDS)
             .readTimeout(24L, TimeUnit.SECONDS)
@@ -59,7 +59,7 @@ public class OkhttpClient {
         HttpLoggingInterceptor logInterceptor = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger() {
             @Override
             public void log(String message) {
-                Log.d("hotlog=====>", message);
+                HttpLogUtils.d("hotlog=====>", message);
             }
         });
         logInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
